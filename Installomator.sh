@@ -3210,15 +3210,19 @@ charles)
     downloadURL="https://www.charlesproxy.com/assets/release/$appNewVersion/charles-proxy-$appNewVersion.dmg"
     expectedTeamID="9A5PCU4FSD"
     ;;
-chatgpt)
+chatgpt|\
+codex)
     name="ChatGPT"
-    type="dmg"
-    if [[ $(arch) == arm64 ]]; then
-        downloadURL="https://persistent.oaistatic.com/sidekick/public/ChatGPT_Desktop_public_latest.dmg"
+    type="zip"
+    if [[ $(arch) == "arm64" ]]; then
+        sparkleData=$(curl -fsL "https://persistent.oaistatic.com/codex-app-prod/appcast.xml")
+        appNewVersion=$(echo "$sparkleData" | xpath 'string(//rss/channel/item[1]/sparkle:shortVersionString)')
+        downloadURL=$(echo "$sparkleData" | xpath 'string(//rss/channel/item[1]/enclosure/@url)')
     else
-        cleanupandexit 2 "No Intel-compatible download URL found. $appLabel is not Intel-compatible. Could not install app." ERROR
+        printlog "ChatGPT is only compatible with Apple Silicon (arm64) Macs." ERROR
+        cleanupAndExit 95 "ChatGPT requires Apple Silicon" ERROR
     fi
-    appNewVersion="$(curl -fs "https://persistent.oaistatic.com/sidekick/public/sparkle_public_appcast.xml" | xpath '(//rss/channel/item/title)[1]/text()' 2>/dev/null)"
+    blockingProcesses=( "ChatGPT" )
     expectedTeamID="2DC432GLL2"
     ;;
 chatwork)
@@ -3793,18 +3797,6 @@ coderunner)
     appNewVersion=$(curl -fsIL ${downloadURL} | grep -i "^location" | cut -d " " -f2 | sed -E 's/.*CodeRunner-([0-9.]*).zip/\1/')
     expectedTeamID="R4GD98AJF9"
     ;;
-codex)
-    name="Codex"
-    type="dmg"
-    if [[ $(arch) == "arm64" ]]; then
-        downloadURL="https://persistent.oaistatic.com/codex-app-prod/Codex.dmg"
-    else
-        printlog "Codex is only compatible with Apple Silicon (arm64) Macs." ERROR
-        cleanupAndExit 95 "Codex requires Apple Silicon" ERROR
-    fi
-    appNewVersion="$(curl -fs "https://persistent.oaistatic.com/codex-app-prod/appcast.xml" | grep -o '<sparkle:shortVersionString>[^<]*' | head -1 | cut -d '>' -f 2)"
-    expectedTeamID="2DC432GLL2"
-    ;;
 colourcontrastanalyser)
     name="Colour Contrast Analyser"
     type="dmg"
@@ -4187,14 +4179,16 @@ swiftdialog)
     expectedTeamID="PWA5E9TQ59"
     ;;
 dialpad)
-    # credit: @ehosaka
     name="Dialpad"
     type="dmg"
     if [[ $(arch) == "arm64" ]]; then
-        downloadURL="https://storage.googleapis.com/dialpad_native/osx/arm64/Dialpad.dmg"
+        downloadURL="https://download.dialpad.com/osx/arm64/Dialpad.dmg"
+        dialpadVersionURL="https://dialpad.com/native/minsupportedversion/darwin/arm64/?channel=stable"
     elif [[ $(arch) == "i386" ]]; then
-        downloadURL="https://storage.googleapis.com/dialpad_native/osx/x64/Dialpad.dmg"
+        downloadURL="https://download.dialpad.com/osx/x64/Dialpad.dmg"
+        dialpadVersionURL="https://dialpad.com/native/minsupportedversion/darwin/x64/?channel=stable"
     fi
+    appNewVersion=$(getJSONValue "$(curl -fsL "$dialpadVersionURL")" latest_version)
     expectedTeamID="9V29MQSZ9M"
     ;;
 digiexam)
